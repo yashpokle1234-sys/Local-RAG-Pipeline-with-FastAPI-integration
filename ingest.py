@@ -52,52 +52,36 @@ def main():
     qdrant_client, redis_client = initialize_clients()
     docs = load_docs()
     if not docs:
-        print('No documents found in ./data directory.')
+        print('no documents found in the directory')
         return
         
     chunks = chunk_documents(docs)
-    print(f'Created {len(chunks)} text chunks from source documents.')
+    print(f'chunks = {len(chunks)} ')
 
-    # Using the low-overhead CPU embedding manager that matches app.py
     model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    
-    # BAAI/bge-small-en-v1.5 uses 384 dimensions
     vector_size = 384
 
-    # Setting up the clean vector collection matrix
-    print(f'Setting up collection: "{COLLECTION_NAME}" in Qdrant Vector DB...')
+    # qdrant client setting
     qdrant_client.recreate_collection(
-        collection_name=COLLECTION_NAME,
-        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
-    )
-
+        collection_name=COLLECTION_NAME,vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE))
     points = []
     for idx, chunk in enumerate(chunks):
-        # Generate the vector embedding using fastembed
         embedding = list(model.embed([chunk['text']]))[0].tolist()
 
-        # Build Qdrant document point struct payload
         points.append(
-            PointStruct(
-                id=idx,
-                vector=embedding,
-                payload={
-                    'text': chunk['text'],
-                    'metadata': chunk['metadata']
-                }
-            )
-        )
+            PointStruct(id=idx,vector=embedding,payload={'text': chunk['text'],'metadata': chunk['metadata']}))
                     
-        # Seed cache preview backup into Redis hset mapping hooks
+        # cache preview backup in =  Redis 
         redis_key = f'doc:chunk:{idx}'
         redis_client.hset(redis_key, mapping={
             'source': chunk['metadata']['source'],
             'text_preview': chunk['text'][:100]
         })
 
-    # Upload everything into your running Qdrant instance
+    # store into qdrant instance
     qdrant_client.upsert(collection_name=COLLECTION_NAME, points=points)
-    print("✅ Ingestion successfully completed! All context vectors stored in Qdrant database.")
+    
+
 
 if __name__ == '__main__':
     main()
