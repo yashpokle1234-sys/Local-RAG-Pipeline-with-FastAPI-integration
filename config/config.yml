@@ -1,0 +1,7 @@
+models:
+  - type: main
+    engine: stable_ollama
+instructions:
+  - type: general
+    content: |
+      this is a private intelligence assistant

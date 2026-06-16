@@ -1,0 +1,22 @@
+# Python bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# Local databases and storage volumes
+qdrant_storage/
+redis_data/
+ollama_storage/
+data/
+
+# System and Environment files
+.env
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+models:
+  - type: main
+    engine: openai
+    model: llama3
+instructions:
+  - type: general
+    content: |
+      this is a private intelligence assistant  

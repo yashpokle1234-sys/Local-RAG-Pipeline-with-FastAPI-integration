@@ -1,0 +1,12 @@
+define user ask off topic
+  "What is your favorite movie?"
+  "Can you write a poem about summer?"
+  "Who won the football match yesterday?"
+  "Tell me a joke."
+
+define bot refuse off topic
+  "I am programmed to assist exclusively with queries related to the local knowledge base documentation."
+
+define flow off topic
+  user ask off topic
+  bot refuse off topic

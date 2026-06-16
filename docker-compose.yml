@@ -1,0 +1,100 @@
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_vector_db
+    ports:
+      - '6333:6333'
+      - '6334:6334'
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - llm_network
+    healthcheck:
+      test: ['CMD','curl','-f','http://localhost:6333/readyz']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_cache
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - llm_network
+    healthcheck:
+      test: ['CMD','redis-cli','ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      # start_period: 5s
+  ollama:
+    image: ollama/ollama:latest
+    container_name: local_ollama_engine
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_storage:/root/.ollama
+    networks:
+      - llm_network    
+  ingest_worker:
+    build: 
+      context: .
+      dockerfile : Dockerfile.ingest
+    container_name : ingest
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - qdrant 
+      
+      - redis
+    networks:
+      - llm_network
+    
+  api_gateway:
+    build: 
+      context: .
+      dockerfile: "Dockerfile.api"
+    container_name : 'fastapi_gateway'
+    restart: always
+    ports:
+       - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LLM_API=http://ollama:11434/v1
+      # - OPENAI_API_BASE=http://ollama:11434/v1
+      - OPENAI_API_KEY=ollama-local
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      - qdrant
+      - redis
+      - ollama
+    networks:
+      - llm_network
+      
+
+  #
+      
+  # volumes:
+    # - qdrant_data:/qdrant/storage
+
+networks:
+  llm_network:
+    driver: bridge
+
+volumes:
+  qdrant_data: 
+  redis_data:
+  ollama_storage:
