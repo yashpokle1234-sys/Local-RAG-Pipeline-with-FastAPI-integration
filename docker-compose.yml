@@ -100,7 +100,7 @@ services:
       
   # volumes:
     # - qdrant_data:/qdrant/storage
-ollama_init:
+  ollama_init:
     image: curlimages/curl:latest
     container_name: ollama_init
     depends_on:
