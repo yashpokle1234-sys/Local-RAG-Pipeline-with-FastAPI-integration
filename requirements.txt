@@ -13,3 +13,4 @@ fastapi==0.111.0
 
 nemoguardrails==0.7.1
 langchain-text-splitters
+slowapi==0.1.9

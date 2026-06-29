@@ -62,7 +62,12 @@ def main():
     vector_size = 384
 
     # qdrant client setting
-    qdrant_client.recreate_collection(
+    if qdrant_client.collectiom_exists(COLLECTION_NAME):
+        qdrant_client.delete_collection(COLLECTION_NAME)
+
+
+
+    qdrant_client.create_collection(
         collection_name=COLLECTION_NAME,vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE))
     points = []
     for idx, chunk in enumerate(chunks):

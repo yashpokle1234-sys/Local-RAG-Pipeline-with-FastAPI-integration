@@ -40,6 +40,13 @@ services:
       - ollama_storage:/root/.ollama
     networks:
       - llm_network    
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s   
   ingest_worker:
     build: 
       context: .
@@ -52,12 +59,12 @@ services:
       - REDIS_PORT=6379
     volumes:
       - ./data:/app/data
+    restart: on-failure
     depends_on:
-      - qdrant 
-      
-      - redis
-    networks:
-      - llm_network
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     
   api_gateway:
     build: 
@@ -78,9 +85,13 @@ services:
     volumes:
       - ./config:/app/config
     depends_on:
-      - qdrant
-      - redis
-      - ollama
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      
     networks:
       - llm_network
       
@@ -89,6 +100,21 @@ services:
       
   # volumes:
     # - qdrant_data:/qdrant/storage
+ollama_init:
+    image: curlimages/curl:latest
+    container_name: ollama_init
+    depends_on:
+      - ollama
+    entrypoint: >
+      sh -c "echo 'Waiting for Ollama...' &&
+      sleep 15 &&
+      curl -s -X POST http://ollama:11434/api/pull
+      -H 'Content-Type: application/json'
+      -d '{\"name\":\"llama3\"}' &&
+      echo 'Model pulled successfully'"
+    networks:
+      - llm_network
+
 
 networks:
   llm_network:
